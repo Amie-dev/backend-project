@@ -13,7 +13,7 @@ export {asyncHandeler}
 
 
 
-// const asyncHandeler=(fun)=>async(req,resizeBy,next)=>{
+// const asyncHandeler=(fun)=>async(req,res,next)=>{
 //     try {
 //         await fun(req,res,next)
 //     } catch (error) {
