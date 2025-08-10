@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { userlogIn, userRegister } from "../controllers/user.controller.js";
+import { refreshAccessToken, userLogIn, userLogOut, userRegister } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const userRouter=Router();
 
@@ -16,8 +17,13 @@ userRouter.route("/register").post(
       maxCount:1
     }]
   ),
-  userRegister)
-userRouter.route("/login").get(userlogIn)
+  userRegister);
+
+userRouter.route("/login").post(userLogIn);
+
+userRouter.get("/logout", verifyJWT,userLogOut)
+
+userRouter.post("/refresh-token",refreshAccessToken)
 
 
 // userRouter.route("/login").get(userlogIn)   ---> multiple methods (.get(), .post(), .put(), etc.) for the same route.
