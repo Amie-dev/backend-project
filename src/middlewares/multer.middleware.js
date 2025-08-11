@@ -1,4 +1,6 @@
 import multer from "multer";
+import fs from "fs";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -12,3 +14,14 @@ const storage = multer.diskStorage({
 });
 
 export const upload = multer({ storage: storage });
+
+export const removeLocalFile = asyncHandler(async (filePath) => {
+  try {
+    if (filePath) {
+      fs.unlinkSync(filePath);
+      console.log(`🧹 Removed file: ${filePath}`);
+    }
+  } catch (error) {
+    console.error(`⚠️ Failed to remove file: ${filePath}`, err.message);
+  }
+});

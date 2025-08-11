@@ -1,30 +1,57 @@
 import { Router } from "express";
-import { refreshAccessToken, userLogIn, userLogOut, userRegister } from "../controllers/user.controller.js";
+import {
+  changeCurrentPassword,
+  getCurrentUser,
+  refreshAccessToken,
+  updateAccountDetails,
+  updateUserAvatar,
+  updateUserCoverImage,
+  userLogIn,
+  userLogOut,
+  userRegister,
+} from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
-const userRouter=Router();
-
+const userRouter = Router();
 
 userRouter.route("/register").post(
-  upload.fields(
-    [{
-      name:"avatar",
-      maxCount:1
+  upload.fields([
+    {
+      name: "avatar",
+      maxCount: 1,
     },
     {
-      name:"coverImage",
-      maxCount:1
-    }]
-  ),
-  userRegister);
+      name: "coverImage",
+      maxCount: 1,
+    },
+  ]),
+  userRegister
+);
 
 userRouter.route("/login").post(userLogIn);
 
-userRouter.get("/logout", verifyJWT,userLogOut)
+userRouter.get("/logout", verifyJWT, userLogOut);
 
-userRouter.post("/refresh-token",refreshAccessToken)
+userRouter.post("/refresh-token", refreshAccessToken);
 
+userRouter.post("/change-password", verifyJWT, changeCurrentPassword);
+userRouter.get("/user", verifyJWT, getCurrentUser);
+
+userRouter.patch("/update-account", verifyJWT, updateAccountDetails);
+
+userRouter.patch(
+  "/update-avatar",
+  verifyJWT,
+  upload.single("avatar"),
+  updateUserAvatar
+);
+userRouter.patch(
+  "/update-cover-image",
+  verifyJWT,
+  upload.single("coverImage"),
+  updateUserCoverImage
+);
 
 // userRouter.route("/login").get(userlogIn)   ---> multiple methods (.get(), .post(), .put(), etc.) for the same route.
 
@@ -36,6 +63,5 @@ userRouter.route("/")
  */
 
 // userRouter.post("/", userRegister);
-
 
 export default userRouter;
