@@ -305,13 +305,52 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 export const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, email, username } = req.body;
+  let { fullName, email, username } = req.body || {};
   const existingUser = await User.findById(req.user?._id);
   if (!existingUser) {
     throw new ApiError(400, "Unauthorized user");
   }
 
   // Use existing values if no new ones are provided
+
+  /*
+
+  if(!fullName) fullName=existingUser.fullName
+  if(!username) username=existingUser.username
+  if(!email) email=existingUser.email
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullName,
+        email,
+        username,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  */
+
+  //or
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullName: fullName || existingUser.fullName,
+        email: email || existingUser.email,
+        username: username || existingUser.username,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  // or
+
+  /*
+
   const updatedFullName = fullName || existingUser.fullName;
   const updatedEmail = email || existingUser.email;
   const updatedUsername = username || existingUser.username;
@@ -329,6 +368,8 @@ export const updateAccountDetails = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
+
+  */
 
   return res
     .status(200)
