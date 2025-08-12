@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   changeCurrentPassword,
   getCurrentUser,
+  getUserChannelProfile,
   refreshAccessToken,
   updateAccountDetails,
   updateUserAvatar,
@@ -52,6 +53,8 @@ userRouter.patch(
   upload.single("coverImage"),
   updateUserCoverImage
 );
+
+userRouter.get("/user/:username",verifyJWT,getUserChannelProfile)
 
 // userRouter.route("/login").get(userlogIn)   ---> multiple methods (.get(), .post(), .put(), etc.) for the same route.
 

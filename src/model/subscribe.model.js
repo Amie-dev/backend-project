@@ -1,6 +1,6 @@
 import mongoose,{Schema} from "mongoose";
 
-const subscribeSchema=new Schema(
+const subscriptionSchema=new Schema(
     {
         subscriber:{
             type:Schema.Types.ObjectId,
@@ -16,4 +16,4 @@ const subscribeSchema=new Schema(
     }
 )
 
-export const Subscribe=mongoose.model("Subscribe",subscribeSchema)
+export const Subscription=mongoose.model("Subscription",subscriptionSchema)
