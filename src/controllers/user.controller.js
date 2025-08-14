@@ -8,6 +8,7 @@ import {
 } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import { removeLocalFile } from "../middlewares/multer.middleware.js";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -529,18 +530,71 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
         channelSubscribedToCount: 1,
         isSubscribed: 1,
         avatar: 1,
-        coverImage:1,
-        email:1,
-        createdAt: 1
+        coverImage: 1,
+        email: 1,
+        createdAt: 1,
       },
     },
   ]);
 
   if (!channel?.length) {
-    throw new ApiError(404,"Channel does not exists")
+    throw new ApiError(404, "Channel does not exists");
   }
 
   return res
-  .status(200)
-  .json(new ApiResponse(200,channel[0],"User channel fetch succesfully"))
+    .status(200)
+    .json(new ApiResponse(200, channel[0], "User channel fetch succesfully"));
+});
+
+export const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    avatar: 1,
+                    subscribersCount: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0].watchHistory,
+        "Watch history fetched successfully"
+      )
+    );
 });

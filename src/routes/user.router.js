@@ -3,6 +3,7 @@ import {
   changeCurrentPassword,
   getCurrentUser,
   getUserChannelProfile,
+  getWatchHistory,
   refreshAccessToken,
   updateAccountDetails,
   updateUserAvatar,
@@ -55,6 +56,8 @@ userRouter.patch(
 );
 
 userRouter.get("/user/:username",verifyJWT,getUserChannelProfile)
+userRouter.get("/history",verifyJWT,getWatchHistory)
+
 
 // userRouter.route("/login").get(userlogIn)   ---> multiple methods (.get(), .post(), .put(), etc.) for the same route.
 
