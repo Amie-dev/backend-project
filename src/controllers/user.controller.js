@@ -177,13 +177,13 @@ export const userLogIn = asyncHandler(async (req, res) => {
 });
 
 export const userLogOut = asyncHandler(async (req, res) => {
-  console.log(req.user);
+  // console.log(req.user);
 
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined,
+      $unset: {
+        refreshToken: 1,//remove key value from data model
       },
     },
     {
