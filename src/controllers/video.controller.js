@@ -110,18 +110,18 @@ const publishAVideo = asyncHandler(async (req, res) => {
   // 📁 Extract file paths
   const videoLocalPath = req.files?.videoFile?.[0]?.path;
   const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
-if (!videoLocalPath) {
+  if (!videoLocalPath) {
     throw new ApiError(400, "Video file is required");
   }
   if (!thumbnailLocalPath) {
     throw new ApiError(400, "thumbnail file is required");
   }
-//   if (!videoLocalPath || !thumbnailLocalPath) {
-//     const missing = [];
-//     if (!videoLocalPath) missing.push("video file");
-//     if (!thumbnailLocalPath) missing.push("thumbnail file");
-//     throw new ApiError(400, `Missing required ${missing.join(" and ")}`);
-//   }
+  //   if (!videoLocalPath || !thumbnailLocalPath) {
+  //     const missing = [];
+  //     if (!videoLocalPath) missing.push("video file");
+  //     if (!thumbnailLocalPath) missing.push("thumbnail file");
+  //     throw new ApiError(400, `Missing required ${missing.join(" and ")}`);
+  //   }
 
   try {
     // ☁️ Upload video to Cloudinary
@@ -145,14 +145,14 @@ if (!videoLocalPath) {
       duration: videoFile.duration,
       videoFile: {
         url: videoFile.url,
-        public_id: videoFile.public_id
+        public_id: videoFile.public_id,
       },
       thumbnail: {
         url: thumbnail.url,
-        public_id: thumbnail.public_id
+        public_id: thumbnail.public_id,
       },
       owner: req.user._id,
-      isPublished: false
+      isPublished: false,
     });
 
     // 🔍 Fetch clean version of uploaded video
@@ -165,16 +165,21 @@ if (!videoLocalPath) {
     }
 
     // ✅ Send success response
-    res.status(200).json(
-      new ApiResponse(200, uploadedVideo, "Video and thumbnail uploaded successfully")
-    );
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          uploadedVideo,
+          "Video and thumbnail uploaded successfully"
+        )
+      );
   } catch (error) {
     // 🛑 Optional: log or forward error
     console.error("Upload error:", error);
     throw new ApiError(500, "Internal server error during video upload");
   }
 });
-
 
 // const publishAVideo = asyncHandler(async (req, res) => {
 //   const { title, description } = req.body;
@@ -208,7 +213,6 @@ if (!videoLocalPath) {
 //       throw new ApiError(400, "Video File not found");
 //     }
 
-
 //     const video=await Video.create({
 //         title,
 //         description,
@@ -238,11 +242,131 @@ if (!videoLocalPath) {
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: get video by id
+  const video = await Video.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(videoId),
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $lookup: {
+              from: "subscriptions",
+              localField: "_id",
+              foreignField: "channel",
+              as: "subscribers",
+            },
+          },
+          {
+            $addFields: {
+              subscribersCount: {
+                $size: "$subscribers",
+              },
+              isSubscribed: {
+                $cond: {
+                  if: {
+                    $in: [req.user?._id, "$subscribers.subscriber"],
+                  },
+                  then: true,
+                  else: false,
+                },
+              },
+            },
+          },
+          {
+            $project: {
+              username: 1,
+              "avatar.url": 1,
+              isSubscribed: 1,
+              subscribersCount: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        likesCount: {
+          $size: "$likes",
+        },
+        owner: {
+          $first: "$owner",
+        },
+        isLiked: {
+          $cond: {
+            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        "videoFile.url": 1,
+        title: 1,
+        description: 1,
+        views: 1,
+        createdAt: 1,
+        duration: 1,
+        comments: 1,
+        owner: 1,
+        likesCount: 1,
+        isLiked: 1,
+      },
+    },
+  ]);
+  if (!video.length) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  // increment views if video fetched successfully
+  await Video.findByIdAndUpdate(videoId, {
+    $inc: {
+      views: 1,
+    },
+  });
+
+  // add this video to user watch history
+  if (req.user?._id) {
+    await User.findByIdAndUpdate(req.user._id, {
+      $addToSet: {
+        watchHistory: videoId,
+      },
+    });
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video[0], "video details fetched successfully"));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: update video details like title, description, thumbnail
+  if (!videoId) {
+    throw new ApiError(400, "Video is not found");
+  }
+
+  const video = await Video.aggregate([
+    {
+      $match: { videoId: _id },
+    },
+  ]);
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
